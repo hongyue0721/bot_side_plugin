@@ -51,6 +51,7 @@ bot_side_plugin/
 
 ## 📝 QQ 指令发布博客
 - 指令格式：`/blog publish 标题 | 正文`
+- 示例：`/blog publish 今天的标题 | 这里是正文内容`
 - 仅管理员可执行（`admin.admin_qqs`）
 - 写入本地 `posts.json`（默认 `blog_side_api/data/posts.json`）
 
