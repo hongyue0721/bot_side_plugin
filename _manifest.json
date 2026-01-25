@@ -1,0 +1,24 @@
+{
+  "manifest_version": 1,
+  "name": "博客评论自动回复",
+  "version": "0.1.0",
+  "description": "定时拉取博客评论并自动生成回复写回",
+  "author": {
+    "name": "YourName"
+  },
+  "license": "MIT",
+  "host_application": {
+    "min_version": "0.10.0",
+    "max_version": "0.12.2"
+  },
+  "homepage_url": "https://github.com/yourname/bot_side_plugin",
+  "repository_url": "https://github.com/yourname/bot_side_plugin",
+  "keywords": ["blog", "comment", "auto-reply", "mai"],
+  "categories": ["External Integration", "Content Generation"],
+  "default_locale": "zh-CN",
+  "plugin_info": {
+    "is_built_in": false,
+    "plugin_type": "general",
+    "components": []
+  }
+}

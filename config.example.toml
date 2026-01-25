@@ -1,0 +1,64 @@
+# bot_side_plugin 配置示例（请对照生成的 config.toml 修改）
+# 注意：实际运行使用插件自动生成的 config.toml
+
+[plugin]
+# 是否启用插件
+enable = true
+# 是否开启调试日志
+debug_mode = false
+
+[blog_api]
+# 博客 API 基础地址（必填）
+blog_api_url = "https://blog.example.com"
+# 博客 API Token（必填）
+blog_api_key = "your-blog-api-key"
+# API 请求超时（秒）
+api_timeout = 10
+# 请求失败重试次数
+retry_times = 3
+# 重试间隔（秒）
+retry_delay = 2
+
+[monitor]
+# 是否启用定时监控
+enable_monitor = true
+# 检查新评论的时间间隔（秒）
+check_interval = 60
+# 初始 since 时间戳（0 表示从现在开始）
+initial_since = 0
+
+[reply]
+# 是否启用自动回复
+enable_reply = true
+# 回复提示词模板（可按需修改）
+reply_prompt_template = """
+你是博客作者，你的博客文章《{post_title}》摘要如下：
+{post_summary}
+访客「{visitor_name}」评论说：「{comment}」
+请你以作者身份，对这条评论做一个简短、友好、自然的回复。
+要求：口吻与你的表达风格一致，不要刻意卖弄知识，不要啰嗦，不要输出多余内容（如冒号、引号、@等）。
+"""
+# 文章摘要最大长度
+max_summary_length = 500
+# LLM 回复超时（秒）
+reply_timeout = 30
+
+[dedup]
+# 是否启用去重
+enable_dedup = true
+# 去重缓存大小
+cache_size = 200
+# 缓存过期时间（秒）
+cache_ttl = 86400
+
+[security]
+# 是否启用人工审核（启用后不自动回复，仅记录日志）
+enable_review = false
+# 禁评词库（命中则跳过回复）
+forbidden_words = []
+# 对同一条评论的最大回复次数
+max_replies_per_comment = 1
+# 仅处理这些文章 ID（空表示全部）
+allowed_post_ids = []
+# 屏蔽的访客名单
+blocked_visitor_names = []
