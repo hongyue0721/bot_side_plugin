@@ -45,6 +45,14 @@ bot_side_plugin/
 - **reply.reply_prompt_template**：回复提示词模板
 - **dedup.cache_ttl**：去重缓存过期时间（秒）
 - **security.forbidden_words**：禁评词列表
+- **admin.admin_qqs**：允许发布博客的管理员 QQ 号
+- **admin.silent_when_no_permission_in_group**：群聊无权限静默处理
+- **publish.posts_json_path**：本地 posts.json 路径
+
+## 📝 QQ 指令发布博客
+- 指令格式：`/blog publish 标题 | 正文`
+- 仅管理员可执行（`admin.admin_qqs`）
+- 写入本地 `posts.json`（默认 `blog_side_api/data/posts.json`）
 
 ## 🤖 人设复用说明
 插件不会在自身配置中定义人设，所有人设均从主程序读取：

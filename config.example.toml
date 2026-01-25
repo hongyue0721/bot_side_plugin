@@ -7,6 +7,12 @@ enable = true
 # 是否开启调试日志
 debug_mode = false
 
+[admin]
+# 允许发布博客的管理员 QQ 号（字符串或数字均可）
+admin_qqs = ["123456789"]
+# 是否在群聊中无权限时静默处理（true=不提示）
+silent_when_no_permission_in_group = true
+
 [blog_api]
 # 博客 API 基础地址（必填）
 blog_api_url = "https://blog.example.com"
