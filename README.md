@@ -1,6 +1,6 @@
 # bot_side_plugin（MaiBot QQ 发布博客插件）
 
-> 用于在 QQ 中通过指令发布博客内容（含定时发布）。
+> 用于在 QQ 中通过指令发布博客内容（含定时发布与定时生成）。
 
 ## ✨ 功能简介
 - QQ 指令发布博客
@@ -45,6 +45,10 @@ bot_side_plugin/
 - **blog_api.url**：远程博客 API 地址
 - **blog_api.admin_password**：管理端密码（HTTP Header: X-ADMIN-PASSWORD）
 - **blog_api.timeout_seconds**：HTTP 超时时间（秒）
+- **generation.model**：定时内容生成使用的模型键名
+- **generation.min_messages**：生成所需最少消息数（不足则跳过）
+- **generation.target_length**：目标字数（用于提示词）
+- **generation.prompt_template**：自定义提示词模板（留空使用默认模板）
 - **schedule.enabled**：是否启用定时发布
 - **schedule.schedule_time**：每日执行时间（HH:MM）
 - **schedule.timezone**：时区设置
@@ -60,6 +64,7 @@ bot_side_plugin/
 ## ⏰ 定时发布
 - 通过 `schedule.queue_json_path` 指定定时队列文件
 - 每日按 `schedule.schedule_time` 执行一次，处理队列中到期条目
+- 若队列条目缺少标题/正文，会自动从聊天记录生成内容
 - 优先使用远程 API 发布，失败时回退本地写入
 - 队列条目格式示例：
 ```json
@@ -67,7 +72,6 @@ bot_side_plugin/
   {
     "title": "定时发布标题",
     "content": "这是正文内容",
-    "author": "MaiBot",
     "publish_at": "2026-01-26T20:00:00+08:00"
   }
 ]

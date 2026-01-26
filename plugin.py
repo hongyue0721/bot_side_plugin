@@ -31,6 +31,7 @@ class BlogPublishPlugin(BasePlugin):
         "publish": "发布博客配置",
         "schedule": "定时发布配置",
         "blog_api": "远程博客 API 配置",
+        "generation": "定时内容生成配置",
     }
 
     config_schema = {
@@ -58,6 +59,12 @@ class BlogPublishPlugin(BasePlugin):
             "url": ConfigField(type=str, default="http://127.0.0.1:8000", description="博客 API 地址"),
             "admin_password": ConfigField(type=str, default="", description="管理端密码（X-ADMIN-PASSWORD）"),
             "timeout_seconds": ConfigField(type=int, default=10, description="HTTP 超时时间（秒）"),
+        },
+        "generation": {
+            "model": ConfigField(type=str, default="replyer", description="生成模型键名"),
+            "min_messages": ConfigField(type=int, default=10, description="最少消息数（不足则跳过生成）"),
+            "target_length": ConfigField(type=int, default=300, description="目标字数（用于生成提示）"),
+            "prompt_template": ConfigField(type=str, default="", description="自定义提示词模板（留空使用默认模板）"),
         },
         "schedule": {
             "enabled": ConfigField(type=bool, default=False, description="是否启用定时发布"),

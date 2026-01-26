@@ -46,12 +46,11 @@ async def _publish_remote(
     admin_password: str,
     title: str,
     content: str,
-    author: str,
     timeout_seconds: int,
 ) -> Optional[int]:
     if not api_url:
         return None
-    payload = {"title": title, "content": content, "author": author}
+    payload = {"title": title, "content": content}
     headers = {}
     if admin_password:
         headers["X-ADMIN-PASSWORD"] = admin_password
@@ -101,9 +100,8 @@ class QQBlogPublishCommand(BaseCommand):
         api_url = self.get_config("blog_api.url", "")
         admin_password = self.get_config("blog_api.admin_password", "")
         timeout_seconds = int(self.get_config("blog_api.timeout_seconds", 10))
-        author = "MaiBot"
 
-        remote_id = await _publish_remote(api_url, admin_password, title, content, author, timeout_seconds)
+        remote_id = await _publish_remote(api_url, admin_password, title, content, timeout_seconds)
         if remote_id:
             await self.send_text(f"✅ 已发布博客（远程）：{title} (ID={remote_id})")
             return True, "发布成功", 2
@@ -120,7 +118,6 @@ class QQBlogPublishCommand(BaseCommand):
             "title": title,
             "summary": content[:120] + ("..." if len(content) > 120 else ""),
             "content": content,
-            "author": author,
             "created_at": datetime.now().astimezone().isoformat(timespec="seconds"),
         }
         posts.append(new_post)

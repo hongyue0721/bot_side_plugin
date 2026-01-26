@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from src.common.logger import get_logger
 
+from .content_generator import generate_post_from_messages
 from .publish_command import _load_posts, _save_posts, _safe_int, _publish_remote
 
 logger = get_logger("blog_publish_scheduler")
@@ -170,12 +171,15 @@ class BlogPublishScheduler:
 
             title = str(item.get("title", "")).strip()
             content = str(item.get("content", "")).strip()
-            author = str(item.get("author", "MaiBot")).strip() or "MaiBot"
             if not title or not content:
-                self.logger.error("定时队列条目缺少标题或正文，已跳过")
-                continue
+                generated = await generate_post_from_messages(self.plugin.config or {})
+                if generated:
+                    title, content = generated
+                else:
+                    self.logger.error("定时队列条目缺少标题或正文，且自动生成失败，已跳过")
+                    continue
 
-            remote_id = await _publish_remote(api_url, admin_password, title, content, author, timeout_seconds)
+            remote_id = await _publish_remote(api_url, admin_password, title, content, timeout_seconds)
             if remote_id:
                 published += 1
                 self.logger.info(f"定时发布成功（远程）: {title} (ID={remote_id})")
@@ -190,7 +194,6 @@ class BlogPublishScheduler:
                 "title": title,
                 "summary": content[:120] + ("..." if len(content) > 120 else ""),
                 "content": content,
-                "author": author,
                 "created_at": created_at,
             }
             posts.append(new_post)
