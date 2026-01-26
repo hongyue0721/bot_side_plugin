@@ -1,13 +1,11 @@
-# bot_side_plugin（MaiBot 博客评论自动回复插件）
+# bot_side_plugin（MaiBot QQ 发布博客插件）
 
-> 用于对接博客端 API 的 MaiBot 插件，定时拉取评论并自动生成回复写回。
+> 用于在 QQ 中通过指令发布博客内容（不含自动回复）。
 
 ## ✨ 功能简介
-- 定时拉取待处理评论
-- 结合主程序人设与回复风格生成回复
-- 自动写回博客
-- 去重与缓存机制
-- 可配置黑白名单/禁评词/人工审核
+- QQ 指令发布博客
+- 管理员权限校验
+- 写入本地 posts.json
 
 ## ✅ 兼容性
 - MaiBot 插件系统（需 `_manifest.json`）
@@ -39,12 +37,6 @@ bot_side_plugin/
 > 实际配置位于 `config.toml`，字段由 `config_schema` 自动生成。
 
 - **plugin.enable**：是否启用插件
-- **blog_api.blog_api_url**：博客 API 地址（必填）
-- **blog_api.blog_api_key**：API Token（必填）
-- **monitor.check_interval**：拉取间隔（秒）
-- **reply.reply_prompt_template**：回复提示词模板
-- **dedup.cache_ttl**：去重缓存过期时间（秒）
-- **security.forbidden_words**：禁评词列表
 - **admin.admin_qqs**：允许发布博客的管理员 QQ 号
 - **admin.silent_when_no_permission_in_group**：群聊无权限静默处理
 - **publish.posts_json_path**：本地 posts.json 路径
@@ -63,12 +55,8 @@ bot_side_plugin/
 - `personality.states`
 - `personality.state_probability`
 
-## 🧪 API 对接约定
-插件调用博客端的两个接口：
-- `GET /api/v1/comments/pending?since=timestamp`
-- `POST /api/v1/comments`
-
-请参考博客端样板工程 `blog_side_api/`。
+## 🧪 说明
+本插件不再调用博客端回复接口，仅通过 QQ 指令写入本地 `posts.json`。
 
 ## 📄 License
 建议发布到 GitHub 时补充 LICENSE（如 MIT）。
