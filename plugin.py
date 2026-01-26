@@ -30,6 +30,7 @@ class BlogPublishPlugin(BasePlugin):
         "admin": "管理员权限配置",
         "publish": "发布博客配置",
         "schedule": "定时发布配置",
+        "blog_api": "远程博客 API 配置",
     }
 
     config_schema = {
@@ -50,8 +51,13 @@ class BlogPublishPlugin(BasePlugin):
             "posts_json_path": ConfigField(
                 type=str,
                 default="blog_side_api/data/posts.json",
-                description="本地博客 posts.json 路径",
+                description="本地博客 posts.json 路径（仅本地模式使用）",
             ),
+        },
+        "blog_api": {
+            "url": ConfigField(type=str, default="http://127.0.0.1:8000", description="博客 API 地址"),
+            "admin_password": ConfigField(type=str, default="", description="管理端密码（X-ADMIN-PASSWORD）"),
+            "timeout_seconds": ConfigField(type=int, default=10, description="HTTP 超时时间（秒）"),
         },
         "schedule": {
             "enabled": ConfigField(type=bool, default=False, description="是否启用定时发布"),

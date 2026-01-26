@@ -41,7 +41,10 @@ bot_side_plugin/
 - **plugin.enabled**：是否启用插件
 - **admin.admin_qqs**：允许发布博客的管理员 QQ 号
 - **admin.silent_when_no_permission_in_group**：群聊无权限静默处理
-- **publish.posts_json_path**：本地 posts.json 路径
+- **publish.posts_json_path**：本地 posts.json 路径（仅本地模式使用）
+- **blog_api.url**：远程博客 API 地址
+- **blog_api.admin_password**：管理端密码（HTTP Header: X-ADMIN-PASSWORD）
+- **blog_api.timeout_seconds**：HTTP 超时时间（秒）
 - **schedule.enabled**：是否启用定时发布
 - **schedule.schedule_time**：每日执行时间（HH:MM）
 - **schedule.timezone**：时区设置
@@ -52,11 +55,12 @@ bot_side_plugin/
 - 指令格式：`/blog publish 标题 | 正文`
 - 示例：`/blog publish 今天的标题 | 这里是正文内容`
 - 仅管理员可执行（`admin.admin_qqs`）
-- 写入本地 `posts.json`（默认 `blog_side_api/data/posts.json`）
+- 优先使用远程 API 发布，失败时回退写入本地 `posts.json`
 
 ## ⏰ 定时发布
 - 通过 `schedule.queue_json_path` 指定定时队列文件
 - 每日按 `schedule.schedule_time` 执行一次，处理队列中到期条目
+- 优先使用远程 API 发布，失败时回退本地写入
 - 队列条目格式示例：
 ```json
 [

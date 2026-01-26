@@ -16,8 +16,16 @@ admin_qqs = ["123456789"]
 silent_when_no_permission_in_group = true
 
 [publish]
-# 本地博客 posts.json 路径（指向 blog_side_api 的数据文件）
+# 本地博客 posts.json 路径（指向 blog_side_api 的数据文件，仅本地模式使用）
 posts_json_path = "blog_side_api/data/posts.json"
+
+[blog_api]
+# 远程博客 API 地址（跨服务器时使用）
+url = "https://api.yourblog.com"
+# 管理端密码（HTTP Header：X-ADMIN-PASSWORD）
+admin_password = "change-me"
+# HTTP 超时时间（秒）
+timeout_seconds = 10
 
 [schedule]
 # 是否启用定时发布（true=启用，false=禁用）

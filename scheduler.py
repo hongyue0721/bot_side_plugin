@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from src.common.logger import get_logger
 
-from .publish_command import _load_posts, _save_posts, _safe_int
+from .publish_command import _load_posts, _save_posts, _safe_int, _publish_remote
 
 logger = get_logger("blog_publish_scheduler")
 
@@ -145,6 +145,9 @@ class BlogPublishScheduler:
         posts_path = self._normalize_path(
             self.plugin.get_config("publish.posts_json_path", "blog_side_api/data/posts.json")
         )
+        api_url = self.plugin.get_config("blog_api.url", "")
+        admin_password = self.plugin.get_config("blog_api.admin_password", "")
+        timeout_seconds = int(self.plugin.get_config("blog_api.timeout_seconds", 10))
         max_posts = int(self.plugin.get_config("schedule.max_posts_per_run", 1))
         max_posts = max(1, max_posts)
 
@@ -172,6 +175,12 @@ class BlogPublishScheduler:
                 self.logger.error("定时队列条目缺少标题或正文，已跳过")
                 continue
 
+            remote_id = await _publish_remote(api_url, admin_password, title, content, author, timeout_seconds)
+            if remote_id:
+                published += 1
+                self.logger.info(f"定时发布成功（远程）: {title} (ID={remote_id})")
+                continue
+
             posts = _load_posts(posts_path)
             max_id = max([_safe_int(str(x.get("id", 0))) for x in posts], default=0)
             new_id = max_id + 1
@@ -187,7 +196,7 @@ class BlogPublishScheduler:
             posts.append(new_post)
             _save_posts(posts_path, posts)
             published += 1
-            self.logger.info(f"定时发布成功: {title} (ID={new_id})")
+            self.logger.info(f"定时发布成功（本地）: {title} (ID={new_id})")
 
         if remaining != queue:
             self._save_queue(queue_path, remaining)
