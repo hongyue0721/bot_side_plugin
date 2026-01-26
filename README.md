@@ -38,7 +38,7 @@ bot_side_plugin/
 ## ⚙️ 配置说明（核心）
 > 实际配置位于 `config.toml`，字段由 `config_schema` 自动生成。
 
-- **plugin.enable**：是否启用插件
+- **plugin.enabled**：是否启用插件
 - **admin.admin_qqs**：允许发布博客的管理员 QQ 号
 - **admin.silent_when_no_permission_in_group**：群聊无权限静默处理
 - **publish.posts_json_path**：本地 posts.json 路径

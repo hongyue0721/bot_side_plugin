@@ -34,7 +34,8 @@ class BlogPublishPlugin(BasePlugin):
 
     config_schema = {
         "plugin": {
-            "enable": ConfigField(type=bool, default=True, description="是否启用插件"),
+            "config_version": ConfigField(type=str, default="1.1.0", description="配置文件版本"),
+            "enabled": ConfigField(type=bool, default=True, description="是否启用插件"),
             "debug_mode": ConfigField(type=bool, default=False, description="调试模式，输出详细日志"),
         },
         "admin": {
@@ -78,10 +79,18 @@ class BlogPublishPlugin(BasePlugin):
 
     async def _start_scheduler_after_delay(self) -> None:
         await asyncio.sleep(10)
+        if not self.get_config("plugin.enabled", True):
+            self.logger.info("插件未启用，跳过定时调度器启动")
+            return
+        if not self.get_config("schedule.enabled", False):
+            self.logger.info("定时发布未启用，跳过调度器启动")
+            return
         if self.scheduler:
             await self.scheduler.start()
 
     def get_plugin_components(self) -> List[Tuple[ComponentInfo, Type]]:
+        if not self.get_config("plugin.enabled", True):
+            return []
         return [
             (QQBlogPublishCommand.get_command_info(), QQBlogPublishCommand),
         ]
