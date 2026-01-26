@@ -154,9 +154,12 @@ async def generate_post_from_messages(plugin_config: Dict[str, Any]) -> Optional
         return None
 
     target_length = int(plugin_config.get("generation", {}).get("target_length", 300))
+    min_length = int(plugin_config.get("generation", {}).get("min_length", 0))
     prompt = plugin_config.get("generation", {}).get("prompt_template") or _build_prompt(
         date_str, timeline, target_length, bot_name
     )
+    if min_length > 0:
+        prompt += f"\n注意：生成的内容字数必须不少于 {min_length} 字。"
 
     models = llm_api.get_available_models()
     model_key = plugin_config.get("generation", {}).get("model", "replyer")
@@ -181,6 +184,11 @@ async def generate_post_from_messages(plugin_config: Dict[str, Any]) -> Optional
         title, body = _parse_llm_output(str(content), fallback_title)
         if not body:
             return None
+        
+        if min_length > 0 and len(body) < min_length:
+            logger.warning(f"生成内容字数不足 ({len(body)} < {min_length})，视为失败")
+            return None
+
         logger.info(f"生成成功，模型: {model_name}")
         return title, body
     except Exception as exc:
@@ -199,8 +207,11 @@ async def generate_post_from_topic(topic: str, plugin_config: Dict[str, Any]) ->
     bot_expression = str(config_api.get_global_config("personality.reply_style", "内容积极向上"))
 
     target_length = int(plugin_config.get("generation", {}).get("target_length", 300))
+    min_length = int(plugin_config.get("generation", {}).get("min_length", 0))
     custom_template = plugin_config.get("generation", {}).get("command_prompt_template")
     prompt = custom_template or _build_topic_prompt(topic, target_length, bot_personality, bot_expression, current_time)
+    if min_length > 0:
+        prompt += f"\n注意：生成的内容字数必须不少于 {min_length} 字。"
 
     models = llm_api.get_available_models()
     model_key = plugin_config.get("generation", {}).get("model", "replyer")
@@ -225,6 +236,11 @@ async def generate_post_from_topic(topic: str, plugin_config: Dict[str, Any]) ->
         title, body = _parse_llm_output(str(content), fallback_title)
         if not body:
             return None
+        
+        if min_length > 0 and len(body) < min_length:
+            logger.warning(f"生成内容字数不足 ({len(body)} < {min_length})，视为失败")
+            return None
+
         logger.info(f"生成成功，模型: {model_name}")
         return title, body
     except Exception as exc:

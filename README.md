@@ -50,6 +50,7 @@ bot_side_plugin/
 - **generation.model**：定时内容生成使用的模型键名
 - **generation.min_messages**：生成所需最少消息数（不足则跳过）
 - **generation.target_length**：目标字数（用于提示词）
+- **generation.min_length**：强制最低字数（如果生成内容少于此字数，将视为失败或重试，0表示不限制）
 - **generation.prompt_template**：自定义提示词模板（留空使用默认模板）
 - **generation.command_prompt_template**：指令生成提示词模板（留空使用默认模板）
 - **schedule.enabled**：是否启用定时发布

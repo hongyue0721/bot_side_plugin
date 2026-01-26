@@ -21,6 +21,7 @@ def _build_plugin_config(get_config) -> dict:
             "model": get_config("generation.model", "replyer"),
             "min_messages": get_config("generation.min_messages", 10),
             "target_length": get_config("generation.target_length", 300),
+            "min_length": get_config("generation.min_length", 0),
             "prompt_template": get_config("generation.prompt_template", ""),
             "command_prompt_template": get_config("generation.command_prompt_template", ""),
         },

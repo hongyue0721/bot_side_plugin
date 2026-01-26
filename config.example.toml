@@ -34,6 +34,8 @@ model = "replyer"
 min_messages = 10
 # 目标字数（用于提示词）
 target_length = 300
+# 强制最低字数（如果生成内容少于此字数，将视为失败或重试，0表示不限制）
+min_length = 100
 # 自定义提示词模板（可选，留空使用默认模板）
 prompt_template = ""
 # 指令生成的提示词模板（可选，留空使用默认模板）
