@@ -105,3 +105,6 @@ bot_side_plugin/
 
 ## 📄 License
 建议发布到 GitHub 时补充 LICENSE（如 MIT）。
+
+## 🙏 致谢
+感谢 **gemini-3-pro-preview-high-search** 和 **gpt-5.2-codex** 对本项目的贡献。
