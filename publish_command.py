@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-import time
+from datetime import datetime
 from typing import Optional, Tuple
 
 from src.plugin_system import BaseCommand
@@ -74,7 +74,7 @@ class QQBlogPublishCommand(BaseCommand):
             "summary": content[:120] + ("..." if len(content) > 120 else ""),
             "content": content,
             "author": "MaiBot",
-            "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "created_at": datetime.now().astimezone().isoformat(timespec="seconds"),
         }
         posts.append(new_post)
         _save_posts(posts_path, posts)

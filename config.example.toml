@@ -13,3 +13,19 @@ admin_qqs = ["123456789"]
 # 是否在群聊中无权限时静默处理（true=不提示）
 silent_when_no_permission_in_group = true
 
+[publish]
+# 本地博客 posts.json 路径（指向 blog_side_api 的数据文件）
+posts_json_path = "blog_side_api/data/posts.json"
+
+[schedule]
+# 是否启用定时发布（true=启用，false=禁用）
+enabled = false
+# 每日执行时间，24小时制（HH:MM）
+schedule_time = "23:30"
+# 时区设置（默认 Asia/Shanghai）
+timezone = "Asia/Shanghai"
+# 定时发布队列 JSON 文件路径
+queue_json_path = "bot_side_plugin/data/scheduled_posts.json"
+# 每次执行最多发布条数（避免一次发布过多）
+max_posts_per_run = 1
+

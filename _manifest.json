@@ -1,8 +1,8 @@
 {
   "manifest_version": 1,
-  "name": "博客评论自动回复",
-  "version": "0.1.0",
-  "description": "定时拉取博客评论并自动生成回复写回",
+  "name": "QQ 发布博客",
+  "version": "1.1.0",
+  "description": "通过 QQ 指令发布博客（含定时发布）",
   "author": {
     "name": "YourName"
   },
@@ -13,7 +13,7 @@
   },
   "homepage_url": "https://github.com/yourname/bot_side_plugin",
   "repository_url": "https://github.com/yourname/bot_side_plugin",
-  "keywords": ["blog", "comment", "auto-reply", "mai"],
+  "keywords": ["blog", "publish", "schedule", "mai"],
   "categories": ["External Integration", "Content Generation"],
   "default_locale": "zh-CN",
   "plugin_info": {
