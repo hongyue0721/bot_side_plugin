@@ -10,6 +10,8 @@ import httpx
 from src.plugin_system import BaseCommand
 from src.common.logger import get_logger
 
+from .content_generator import generate_post_from_topic
+
 logger = get_logger("blog_publish_command")
 
 
@@ -124,4 +126,64 @@ class QQBlogPublishCommand(BaseCommand):
         _save_posts(posts_path, posts)
 
         await self.send_text(f"✅ 已发布博客（本地）：{title} (ID={new_id})")
+        return True, "发布成功", 2
+
+
+class QQBlogGenerateCommand(BaseCommand):
+    """通过 QQ 指令生成并发布博客（LLM）"""
+
+    command_name = "blog_generate"
+    command_description = "生成并发布博客文章（管理员）"
+    command_pattern = r"^/blog\s+generate\s+(?P<topic>.+)$"
+
+    async def execute(self) -> Tuple[bool, Optional[str], int]:
+        admin_qqs = [str(x) for x in self.get_config("admin.admin_qqs", [])]
+        user_id = str(self.message.message_info.user_info.user_id)
+        is_group_chat = self.message.message_info.group_info is not None
+        silent_in_group = bool(self.get_config("admin.silent_when_no_permission_in_group", True))
+
+        if admin_qqs and user_id not in admin_qqs:
+            if is_group_chat and silent_in_group:
+                return False, "无权限", 2
+            await self.send_text("❌ 你没有权限生成博客。")
+            return False, "无权限", 2
+
+        topic = (self.matched_groups.get("topic") or "").strip()
+        if not topic:
+            await self.send_text("❌ 命令格式错误：/blog generate 主题")
+            return False, "参数错误", 2
+
+        generated = await generate_post_from_topic(topic, self.plugin.config or {})
+        if not generated:
+            await self.send_text("❌ 生成失败，请稍后再试")
+            return False, "生成失败", 2
+
+        title, content = generated
+        api_url = self.get_config("blog_api.url", "")
+        admin_password = self.get_config("blog_api.admin_password", "")
+        timeout_seconds = int(self.get_config("blog_api.timeout_seconds", 10))
+
+        remote_id = await _publish_remote(api_url, admin_password, title, content, timeout_seconds)
+        if remote_id:
+            await self.send_text(f"✅ 已生成并发布博客（远程）：{title} (ID={remote_id})")
+            return True, "发布成功", 2
+
+        posts_path = self.get_config("publish.posts_json_path", "blog_side_api/data/posts.json")
+        posts_path = posts_path.replace("\\", "/")
+
+        posts = _load_posts(posts_path)
+        max_id = max([_safe_int(str(x.get("id", 0))) for x in posts], default=0)
+        new_id = max_id + 1
+
+        new_post = {
+            "id": new_id,
+            "title": title,
+            "summary": content[:120] + ("..." if len(content) > 120 else ""),
+            "content": content,
+            "created_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        }
+        posts.append(new_post)
+        _save_posts(posts_path, posts)
+
+        await self.send_text(f"✅ 已生成并发布博客（本地）：{title} (ID={new_id})")
         return True, "发布成功", 2

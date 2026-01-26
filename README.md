@@ -4,6 +4,7 @@
 
 ## ✨ 功能简介
 - QQ 指令发布博客
+- QQ 指令按主题生成博客（LLM）
 - 管理员权限校验
 - 写入本地 posts.json
 - 定时发布队列
@@ -19,6 +20,7 @@ bot_side_plugin/
 ├── plugin.py              # 插件入口（BasePlugin）
 ├── publish_command.py     # QQ 指令发布博客
 ├── scheduler.py           # 定时发布调度器
+├── content_generator.py   # LLM 生成内容
 ├── requirements.txt       # 依赖
 ├── config.example.toml    # 配置示例（含中文注释）
 ├── STRUCTURE.md           # 结构说明
@@ -49,6 +51,7 @@ bot_side_plugin/
 - **generation.min_messages**：生成所需最少消息数（不足则跳过）
 - **generation.target_length**：目标字数（用于提示词）
 - **generation.prompt_template**：自定义提示词模板（留空使用默认模板）
+- **generation.command_prompt_template**：指令生成提示词模板（留空使用默认模板）
 - **schedule.enabled**：是否启用定时发布
 - **schedule.schedule_time**：每日执行时间（HH:MM）
 - **schedule.timezone**：时区设置
@@ -60,6 +63,12 @@ bot_side_plugin/
 - 示例：`/blog publish 今天的标题 | 这里是正文内容`
 - 仅管理员可执行（`admin.admin_qqs`）
 - 优先使用远程 API 发布，失败时回退写入本地 `posts.json`
+
+## ✨ QQ 指令生成博客（LLM）
+- 指令格式：`/blog generate 主题`
+- 示例：`/blog generate 中午吃了什么`
+- 仅管理员可执行（`admin.admin_qqs`）
+- 按主题生成标题与正文，再发布到远程 API；失败时回退写入本地 `posts.json`
 
 ## ⏰ 定时发布
 - 通过 `schedule.queue_json_path` 指定定时队列文件

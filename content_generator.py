@@ -92,6 +92,18 @@ def _build_prompt(date_str: str, timeline: str, target_length: int, bot_name: st
     )
 
 
+def _build_topic_prompt(topic: str, target_length: int, bot_personality: str, bot_expression: str, current_time: str) -> str:
+    return (
+        f"你是{bot_personality}，现在是{current_time}。\n"
+        f"请围绕主题“{topic}”写一篇{target_length}字左右的中文博客。\n"
+        f"要求：第一人称、口语化自然，不要流水账；适当总结关键细节与感受；{bot_expression}。\n"
+        f"不要输出任何前后缀、引号或解释。\n\n"
+        f"请严格按以下格式输出：\n"
+        f"标题: <一句话标题>\n"
+        f"正文: <博客正文>\n"
+    )
+
+
 def _parse_llm_output(text: str, fallback_title: str) -> Tuple[str, str]:
     if not text:
         return fallback_title, ""
@@ -166,6 +178,50 @@ async def generate_post_from_messages(plugin_config: Dict[str, Any]) -> Optional
             logger.error("LLM 生成失败")
             return None
         fallback_title = f"{date_str} 日记"
+        title, body = _parse_llm_output(str(content), fallback_title)
+        if not body:
+            return None
+        logger.info(f"生成成功，模型: {model_name}")
+        return title, body
+    except Exception as exc:
+        logger.error(f"LLM 调用失败: {exc}")
+        return None
+
+
+async def generate_post_from_topic(topic: str, plugin_config: Dict[str, Any]) -> Optional[Tuple[str, str]]:
+    if not topic:
+        return None
+
+    current_time = _get_timezone_now(plugin_config.get("schedule", {}).get("timezone", "Asia/Shanghai")).strftime(
+        "%Y-%m-%d %H:%M:%S"
+    )
+    bot_personality = str(config_api.get_global_config("personality.personality", "一个机器人"))
+    bot_expression = str(config_api.get_global_config("personality.reply_style", "内容积极向上"))
+
+    target_length = int(plugin_config.get("generation", {}).get("target_length", 300))
+    custom_template = plugin_config.get("generation", {}).get("command_prompt_template")
+    prompt = custom_template or _build_topic_prompt(topic, target_length, bot_personality, bot_expression, current_time)
+
+    models = llm_api.get_available_models()
+    model_key = plugin_config.get("generation", {}).get("model", "replyer")
+    model_config = models.get(model_key) if isinstance(models, dict) else None
+    if not model_config and isinstance(models, dict) and models:
+        model_config = list(models.values())[0]
+
+    if not model_config:
+        logger.error("未找到可用模型")
+        return None
+
+    try:
+        success, content, _, model_name = await llm_api.generate_with_model(
+            prompt=prompt,
+            model_config=model_config,
+            request_type="plugin.blog_publish_generation",
+        )
+        if not success or not content:
+            logger.error("LLM 生成失败")
+            return None
+        fallback_title = f"{topic}"
         title, body = _parse_llm_output(str(content), fallback_title)
         if not body:
             return None

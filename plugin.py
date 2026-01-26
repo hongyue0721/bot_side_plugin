@@ -5,7 +5,7 @@ from typing import List, Tuple, Type
 
 from src.plugin_system import BasePlugin, register_plugin, ComponentInfo
 
-from .publish_command import QQBlogPublishCommand
+from .publish_command import QQBlogPublishCommand, QQBlogGenerateCommand
 from .scheduler import BlogPublishScheduler
 from src.plugin_system.base.config_types import ConfigField
 from src.common.logger import get_logger
@@ -65,6 +65,11 @@ class BlogPublishPlugin(BasePlugin):
             "min_messages": ConfigField(type=int, default=10, description="最少消息数（不足则跳过生成）"),
             "target_length": ConfigField(type=int, default=300, description="目标字数（用于生成提示）"),
             "prompt_template": ConfigField(type=str, default="", description="自定义提示词模板（留空使用默认模板）"),
+            "command_prompt_template": ConfigField(
+                type=str,
+                default="",
+                description="指令生成的提示词模板（留空使用默认模板）",
+            ),
         },
         "schedule": {
             "enabled": ConfigField(type=bool, default=False, description="是否启用定时发布"),
@@ -106,4 +111,5 @@ class BlogPublishPlugin(BasePlugin):
             return []
         return [
             (QQBlogPublishCommand.get_command_info(), QQBlogPublishCommand),
+            (QQBlogGenerateCommand.get_command_info(), QQBlogGenerateCommand),
         ]
