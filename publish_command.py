@@ -15,6 +15,21 @@ from .content_generator import generate_post_from_topic
 logger = get_logger("blog_publish_command")
 
 
+def _build_plugin_config(get_config) -> dict:
+    return {
+        "generation": {
+            "model": get_config("generation.model", "replyer"),
+            "min_messages": get_config("generation.min_messages", 10),
+            "target_length": get_config("generation.target_length", 300),
+            "prompt_template": get_config("generation.prompt_template", ""),
+            "command_prompt_template": get_config("generation.command_prompt_template", ""),
+        },
+        "schedule": {
+            "timezone": get_config("schedule.timezone", "Asia/Shanghai"),
+        },
+    }
+
+
 def _safe_int(value: str, default: int = 0) -> int:
     try:
         return int(value)
@@ -153,7 +168,8 @@ class QQBlogGenerateCommand(BaseCommand):
             await self.send_text("❌ 命令格式错误：/blog generate 主题")
             return False, "参数错误", 2
 
-        generated = await generate_post_from_topic(topic, self.plugin.config or {})
+        plugin_config = _build_plugin_config(self.get_config)
+        generated = await generate_post_from_topic(topic, plugin_config)
         if not generated:
             await self.send_text("❌ 生成失败，请稍后再试")
             return False, "生成失败", 2

@@ -58,6 +58,10 @@ bot_side_plugin/
 - **schedule.queue_json_path**：定时发布队列 JSON 路径
 - **schedule.max_posts_per_run**：每次执行最多发布条数
 
+## 🧾 指令清单
+- `/blog publish 标题 | 正文`：发布博客（管理员）
+- `/blog generate 主题`：按主题生成并发布博客（管理员）
+
 ## 📝 QQ 指令发布博客
 - 指令格式：`/blog publish 标题 | 正文`
 - 示例：`/blog publish 今天的标题 | 这里是正文内容`
