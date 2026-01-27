@@ -36,12 +36,18 @@ class BlogPublishPlugin(BasePlugin):
 
     config_schema = {
         "plugin": {
-            "config_version": ConfigField(type=str, default="1.1.0", description="配置文件版本"),
+            "config_version": ConfigField(type=str, default="1.2.0", description="配置文件版本"),
             "enabled": ConfigField(type=bool, default=True, description="是否启用插件"),
             "debug_mode": ConfigField(type=bool, default=False, description="调试模式，输出详细日志"),
         },
         "admin": {
-            "admin_qqs": ConfigField(type=list, default=[], description="允许发布博客的管理员 QQ 号"),
+            "admin_qqs": ConfigField(
+                type=list,
+                default=[],
+                description="允许发布博客的管理员 QQ 号",
+                item_type="string",
+                placeholder="输入 QQ 号",
+            ),
             "silent_when_no_permission_in_group": ConfigField(
                 type=bool,
                 default=True,
@@ -57,23 +63,36 @@ class BlogPublishPlugin(BasePlugin):
         },
         "blog_api": {
             "url": ConfigField(type=str, default="http://127.0.0.1:8000", description="博客 API 地址"),
-            "admin_password": ConfigField(type=str, default="", description="管理端密码（X-ADMIN-PASSWORD）"),
+            "admin_password": ConfigField(
+                type=str,
+                default="",
+                description="管理端密码（X-ADMIN-PASSWORD）",
+                input_type="password",
+            ),
             "timeout_seconds": ConfigField(type=int, default=10, description="HTTP 超时时间（秒）"),
         },
         "generation": {
             "model": ConfigField(type=str, default="replyer", description="生成模型键名"),
             "min_messages": ConfigField(type=int, default=10, description="最少消息数（不足则跳过生成）"),
             "target_length": ConfigField(type=int, default=300, description="目标字数（用于生成提示）"),
-            "prompt_template": ConfigField(type=str, default="", description="自定义提示词模板（留空使用默认模板）"),
+            "min_length": ConfigField(type=int, default=100, description="强制最低字数（少于此字数将重试）"),
+            "prompt_template": ConfigField(
+                type=str,
+                default="",
+                description="自定义提示词模板（留空使用默认模板）",
+                input_type="textarea",
+                rows=5,
+            ),
             "command_prompt_template": ConfigField(
                 type=str,
                 default="",
                 description="指令生成的提示词模板（留空使用默认模板）",
+                input_type="textarea",
+                rows=5,
             ),
         },
         "schedule": {
             "enabled": ConfigField(type=bool, default=False, description="是否启用定时发布"),
-            "schedule_time": ConfigField(type=str, default="23:30", description="每日执行时间(HH:MM)"),
             "timezone": ConfigField(type=str, default="Asia/Shanghai", description="时区设置"),
             "queue_json_path": ConfigField(
                 type=str,
@@ -84,6 +103,24 @@ class BlogPublishPlugin(BasePlugin):
                 type=int,
                 default=1,
                 description="每次执行最多发布条数",
+            ),
+            "tasks": ConfigField(
+                type=list,
+                default=[
+                    {"time": "08:00", "type": "topic", "topic": "早安，新的一天"},
+                    {"time": "23:30", "type": "summary"},
+                ],
+                description="定时任务列表",
+                item_type="object",
+                item_fields={
+                    "time": {"type": "string", "label": "执行时间 (HH:MM)", "placeholder": "08:00"},
+                    "type": {
+                        "type": "string",
+                        "label": "任务类型",
+                        "choices": ["topic", "summary", "queue"],
+                    },
+                    "topic": {"type": "string", "label": "话题 (仅 topic 类型有效)", "placeholder": "早安"},
+                },
             ),
         },
     }

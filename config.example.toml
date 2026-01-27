@@ -44,12 +44,25 @@ command_prompt_template = ""
 [schedule]
 # 是否启用定时发布（true=启用，false=禁用）
 enabled = false
-# 每日执行时间，24小时制（HH:MM）
-schedule_time = "23:30"
 # 时区设置（默认 Asia/Shanghai）
 timezone = "Asia/Shanghai"
 # 定时发布队列 JSON 文件路径
 queue_json_path = "bot_side_plugin/data/scheduled_posts.json"
 # 每次执行最多发布条数（避免一次发布过多）
 max_posts_per_run = 1
+
+# 定时任务列表
+# type 可选值:
+#   "topic"   - 根据 topic 字段生成话题博客
+#   "summary" - 生成昨日/今日聊天记录总结
+#   "queue"   - 处理 queue_json_path 中的预定队列（兼容旧版逻辑）
+
+[[schedule.tasks]]
+time = "08:00"
+type = "topic"
+topic = "早安，新的一天"
+
+[[schedule.tasks]]
+time = "23:30"
+type = "summary"
 

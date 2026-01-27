@@ -95,11 +95,12 @@ def _build_prompt(date_str: str, timeline: str, target_length: int, bot_name: st
 def _build_topic_prompt(topic: str, target_length: int, bot_personality: str, bot_expression: str, current_time: str) -> str:
     return (
         f"你是{bot_personality}，现在是{current_time}。\n"
-        f"请围绕主题“{topic}”写一篇{target_length}字左右的中文博客。\n"
-        f"要求：第一人称、口语化自然，不要流水账；适当总结关键细节与感受；{bot_expression}。\n"
+        f"请以“{topic}”为灵感，写一篇{target_length}字左右的中文博客。\n"
+        f"请发挥想象力，内容不必局限于“{topic}”字面意思，可以发散思维，聊聊相关的生活细节、心情、天气或随机的有趣想法，让内容更具随机性和生活感。\n"
+        f"要求：第一人称、口语化自然，不要流水账；{bot_expression}。\n"
         f"不要输出任何前后缀、引号或解释。\n\n"
         f"请严格按以下格式输出：\n"
-        f"标题: <一句话标题>\n"
+        f"标题: <一句话标题（请根据实际生成的内容起标题，不要直接使用“{topic}”）>\n"
         f"正文: <博客正文>\n"
     )
 
@@ -153,13 +154,25 @@ async def generate_post_from_messages(plugin_config: Dict[str, Any]) -> Optional
         logger.info("时间线为空，跳过生成")
         return None
 
-    target_length = int(plugin_config.get("generation", {}).get("target_length", 300))
+    # 参考 diary_plugin 逻辑：使用随机目标字数范围，增加自然感
+    base_target = int(plugin_config.get("generation", {}).get("target_length", 300))
     min_length = int(plugin_config.get("generation", {}).get("min_length", 0))
+    
+    # 动态计算目标字数：在 base_target 基础上浮动 +/- 50 字，但不少于 min_length
+    import random
+    target_length = random.randint(max(min_length, base_target - 50), base_target + 50)
+
     prompt = plugin_config.get("generation", {}).get("prompt_template") or _build_prompt(
         date_str, timeline, target_length, bot_name
     )
+    
+    # 强化字数限制提示，参考 diary_plugin 的明确指令风格
     if min_length > 0:
-        prompt += f"\n注意：生成的内容字数必须不少于 {min_length} 字。"
+        prompt += (
+            f"\n\n【重要字数要求】\n"
+            f"请务必保证正文内容不少于 {min_length} 字！\n"
+            f"如果内容过短，请多补充一些细节、感受或环境描写，不要敷衍了事。"
+        )
 
     models = llm_api.get_available_models()
     model_key = plugin_config.get("generation", {}).get("model", "replyer")
@@ -186,7 +199,21 @@ async def generate_post_from_messages(plugin_config: Dict[str, Any]) -> Optional
             return None
         
         if min_length > 0 and len(body) < min_length:
-            logger.warning(f"生成内容字数不足 ({len(body)} < {min_length})，视为失败")
+            logger.warning(f"生成内容字数不足 ({len(body)} < {min_length})，尝试重试...")
+            # 简单的重试逻辑：再次调用生成，提示词增加字数强调
+            retry_prompt = prompt + f"\n\n【重要】上一次生成的内容太短了，请务必保证正文内容不少于 {min_length} 字！多写一些细节。"
+            success_retry, content_retry, _, _ = await llm_api.generate_with_model(
+                prompt=retry_prompt,
+                model_config=model_config,
+                request_type="plugin.blog_publish_generation_retry",
+            )
+            if success_retry and content_retry:
+                title_retry, body_retry = _parse_llm_output(str(content_retry), fallback_title)
+                if body_retry and len(body_retry) >= min_length:
+                    logger.info(f"重试生成成功，字数: {len(body_retry)}")
+                    return title_retry, body_retry
+            
+            logger.error(f"重试后字数仍不足或失败，放弃生成")
             return None
 
         logger.info(f"生成成功，模型: {model_name}")
@@ -206,12 +233,23 @@ async def generate_post_from_topic(topic: str, plugin_config: Dict[str, Any]) ->
     bot_personality = str(config_api.get_global_config("personality.personality", "一个机器人"))
     bot_expression = str(config_api.get_global_config("personality.reply_style", "内容积极向上"))
 
-    target_length = int(plugin_config.get("generation", {}).get("target_length", 300))
+    # 参考 diary_plugin 逻辑：使用随机目标字数范围
+    base_target = int(plugin_config.get("generation", {}).get("target_length", 300))
     min_length = int(plugin_config.get("generation", {}).get("min_length", 0))
+    
+    import random
+    target_length = random.randint(max(min_length, base_target - 50), base_target + 50)
+
     custom_template = plugin_config.get("generation", {}).get("command_prompt_template")
     prompt = custom_template or _build_topic_prompt(topic, target_length, bot_personality, bot_expression, current_time)
+    
+    # 强化字数限制提示
     if min_length > 0:
-        prompt += f"\n注意：生成的内容字数必须不少于 {min_length} 字。"
+        prompt += (
+            f"\n\n【重要字数要求】\n"
+            f"请务必保证正文内容不少于 {min_length} 字！\n"
+            f"如果内容过短，请多补充一些细节、感受或环境描写，不要敷衍了事。"
+        )
 
     models = llm_api.get_available_models()
     model_key = plugin_config.get("generation", {}).get("model", "replyer")
@@ -238,7 +276,21 @@ async def generate_post_from_topic(topic: str, plugin_config: Dict[str, Any]) ->
             return None
         
         if min_length > 0 and len(body) < min_length:
-            logger.warning(f"生成内容字数不足 ({len(body)} < {min_length})，视为失败")
+            logger.warning(f"生成内容字数不足 ({len(body)} < {min_length})，尝试重试...")
+            # 简单的重试逻辑：再次调用生成，提示词增加字数强调
+            retry_prompt = prompt + f"\n\n【重要】上一次生成的内容太短了，请务必保证正文内容不少于 {min_length} 字！多写一些细节。"
+            success_retry, content_retry, _, _ = await llm_api.generate_with_model(
+                prompt=retry_prompt,
+                model_config=model_config,
+                request_type="plugin.blog_publish_generation_retry",
+            )
+            if success_retry and content_retry:
+                title_retry, body_retry = _parse_llm_output(str(content_retry), fallback_title)
+                if body_retry and len(body_retry) >= min_length:
+                    logger.info(f"重试生成成功，字数: {len(body_retry)}")
+                    return title_retry, body_retry
+            
+            logger.error(f"重试后字数仍不足或失败，放弃生成")
             return None
 
         logger.info(f"生成成功，模型: {model_name}")
