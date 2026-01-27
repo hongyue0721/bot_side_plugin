@@ -75,7 +75,7 @@ class BlogPublishPlugin(BasePlugin):
             "model": ConfigField(type=str, default="replyer", description="生成模型键名"),
             "min_messages": ConfigField(type=int, default=10, description="最少消息数（不足则跳过生成）"),
             "target_length": ConfigField(type=int, default=300, description="目标字数（用于生成提示）"),
-            "min_length": ConfigField(type=int, default=100, description="强制最低字数（少于此字数将重试）"),
+            "min_length": ConfigField(type=int, default=0, description="强制最低字数（0表示不限制）"),
             "prompt_template": ConfigField(
                 type=str,
                 default="",
