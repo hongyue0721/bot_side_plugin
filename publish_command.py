@@ -6,9 +6,11 @@ from datetime import datetime
 from typing import Optional, Tuple
 
 import httpx
+import asyncio
 
 from src.plugin_system import BaseCommand
 from src.common.logger import get_logger
+from src.common.database.database_model import Messages
 
 from .content_generator import generate_post_from_topic
 
@@ -21,7 +23,6 @@ def _build_plugin_config(get_config) -> dict:
             "model": get_config("generation.model", "replyer"),
             "min_messages": get_config("generation.min_messages", 10),
             "target_length": get_config("generation.target_length", 300),
-            "min_length": get_config("generation.min_length", 0),
             "prompt_template": get_config("generation.prompt_template", ""),
             "command_prompt_template": get_config("generation.command_prompt_template", ""),
         },
@@ -89,7 +90,41 @@ async def _publish_remote(
         return None
 
 
-class QQBlogPublishCommand(BaseCommand):
+class BlogBaseCommand(BaseCommand):
+    """博客插件基础命令类，提供通用功能"""
+
+    async def _delete_cmd_message(self):
+        """延迟删除触发指令的消息，避免污染上下文"""
+        if not self.message or not hasattr(self.message, 'chat_stream') or not self.message.chat_stream:
+            return
+        
+        chat_id = self.message.chat_stream.stream_id
+        user_id = str(self.message.message_info.user_info.user_id)
+
+        async def delayed_delete():
+            await asyncio.sleep(2)  # 等待消息入库
+            try:
+                # 查找该用户在该群的最近一条消息（即指令消息）
+                target_msgs = (Messages
+                              .select()
+                              .where(
+                                  (Messages.chat_id == chat_id) &
+                                  (Messages.user_id == user_id)
+                              )
+                              .order_by(Messages.time.desc())
+                              .limit(1))
+                
+                if target_msgs:
+                    for msg in target_msgs:
+                        Messages.delete().where(Messages.message_id == msg.message_id).execute()
+                        logger.info(f"已删除博客指令消息: {msg.message_id}")
+            except Exception as e:
+                logger.warning(f"删除指令消息失败: {e}")
+
+        asyncio.create_task(delayed_delete())
+
+
+class QQBlogPublishCommand(BlogBaseCommand):
     """通过 QQ 指令发布博客（远程 API 或本地 posts.json）"""
 
     command_name = "blog_publish"
@@ -122,6 +157,7 @@ class QQBlogPublishCommand(BaseCommand):
         remote_id = await _publish_remote(api_url, admin_password, title, content, timeout_seconds)
         if remote_id:
             await self.send_text(f"✅ 已发布博客（远程）：{title} (ID={remote_id})")
+            await self._delete_cmd_message()
             return True, "发布成功", 2
 
         posts_path = self.get_config("publish.posts_json_path", "blog_side_api/data/posts.json")
@@ -142,10 +178,11 @@ class QQBlogPublishCommand(BaseCommand):
         _save_posts(posts_path, posts)
 
         await self.send_text(f"✅ 已发布博客（本地）：{title} (ID={new_id})")
+        await self._delete_cmd_message()
         return True, "发布成功", 2
 
 
-class QQBlogGenerateCommand(BaseCommand):
+class QQBlogGenerateCommand(BlogBaseCommand):
     """通过 QQ 指令生成并发布博客（LLM）"""
 
     command_name = "blog_generate"
@@ -183,6 +220,7 @@ class QQBlogGenerateCommand(BaseCommand):
         remote_id = await _publish_remote(api_url, admin_password, title, content, timeout_seconds)
         if remote_id:
             await self.send_text(f"✅ 已生成并发布博客（远程）：{title} (ID={remote_id})")
+            await self._delete_cmd_message()
             return True, "发布成功", 2
 
         posts_path = self.get_config("publish.posts_json_path", "blog_side_api/data/posts.json")
@@ -203,4 +241,5 @@ class QQBlogGenerateCommand(BaseCommand):
         _save_posts(posts_path, posts)
 
         await self.send_text(f"✅ 已生成并发布博客（本地）：{title} (ID={new_id})")
+        await self._delete_cmd_message()
         return True, "发布成功", 2
