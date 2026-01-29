@@ -40,6 +40,11 @@ class BlogPublishPlugin(BasePlugin):
             "enabled": ConfigField(type=bool, default=True, description="是否启用插件"),
             "debug_mode": ConfigField(type=bool, default=False, description="调试模式，输出详细日志"),
         },
+        "dream": {
+            "enabled": ConfigField(type=bool, default=True, description="是否启用梦境转发"),
+            "title_prefix": ConfigField(type=str, default="麦麦的梦境", description="梦境文章标题前缀"),
+            "default_image": ConfigField(type=str, default="", description="梦境文章默认封面图"),
+        },
         "admin": {
             "admin_qqs": ConfigField(
                 type=list,
@@ -130,6 +135,79 @@ class BlogPublishPlugin(BasePlugin):
         self.logger = get_logger("BlogPublishPlugin")
         self.scheduler = BlogPublishScheduler(self)
         asyncio.create_task(self._start_scheduler_after_delay())
+        
+        # 注册梦境转发 Monkey Patch
+        if self.get_config("dream.enabled", True):
+            self._register_dream_patch()
+
+    def _register_dream_patch(self):
+        """注册梦境转发 Monkey Patch"""
+        from src.llm_models.utils_model import LLMRequest
+        
+        original_generate = LLMRequest.generate_response_async
+        plugin_instance = self
+
+        async def patched_generate_response_async(self, *args, **kwargs):
+            # 执行原始方法
+            result = await original_generate(self, *args, **kwargs)
+            
+            # 检查是否为梦境生成请求
+            if self.request_type == "dream.summary":
+                try:
+                    content = result[0]
+                    if content:
+                        # 异步发送到博客，不阻塞主流程
+                        asyncio.create_task(plugin_instance._post_dream_to_blog(content))
+                except Exception as e:
+                    plugin_instance.logger.error(f"处理梦境转发时出错: {e}")
+            
+            return result
+
+        LLMRequest.generate_response_async = patched_generate_response_async
+        self.logger.info("已启用梦境转发功能 (Monkey Patch)")
+
+    async def _post_dream_to_blog(self, content: str):
+        """发送梦境内容到博客"""
+        import httpx
+        import datetime
+        
+        try:
+            api_url = self.get_config("blog_api.url", "http://127.0.0.1:8000")
+            admin_password = self.get_config("blog_api.admin_password", "")
+            title_prefix = self.get_config("dream.title_prefix", "麦麦的梦境")
+            default_image = self.get_config("dream.default_image", "")
+            
+            # 生成标题
+            date_str = datetime.datetime.now().strftime("%Y-%m-%d")
+            title = f"{title_prefix} - {date_str}"
+            
+            # 构造请求
+            payload = {
+                "title": title,
+                "content": content,
+                "summary": content[:100] + "...",
+                "images": [default_image] if default_image else []
+            }
+            
+            headers = {}
+            if admin_password:
+                headers["X-ADMIN-PASSWORD"] = admin_password
+                
+            async with httpx.AsyncClient() as client:
+                resp = await client.post(
+                    f"{api_url}/api/v1/posts",
+                    json=payload,
+                    headers=headers,
+                    timeout=10
+                )
+                
+                if resp.status_code == 200:
+                    self.logger.info(f"梦境已成功转发到博客: {title}")
+                else:
+                    self.logger.error(f"梦境转发失败: {resp.status_code} - {resp.text}")
+                    
+        except Exception as e:
+            self.logger.error(f"发送梦境到博客时发生异常: {e}")
 
     async def _start_scheduler_after_delay(self) -> None:
         await asyncio.sleep(10)
